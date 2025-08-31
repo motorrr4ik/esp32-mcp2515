@@ -460,14 +460,14 @@ private:
     } RXB[N_RXBUFFERS];
 
 private:
-    spi_device_handle_t *spi;
+    const spi_device_handle_t *spi;
 
     ERROR setMode(const CANCTRL_REQOP_MODE mode);
 
     uint8_t readRegister(const REGISTER reg);
-    void readRegisters(const REGISTER reg, uint8_t values[], const uint8_t n);
+    void readRegisters(const REGISTER reg, uint8_t values[], const size_t n);
     void setRegister(const REGISTER reg, const uint8_t value);
-    void setRegisters(const REGISTER reg, const uint8_t values[], const uint8_t n);
+    void setRegisters(const REGISTER reg, const uint8_t values[], const size_t n);
     void modifyRegister(const REGISTER reg, const uint8_t mask, const uint8_t data);
 
     void prepareId(uint8_t *buffer, const bool ext, const uint32_t id);

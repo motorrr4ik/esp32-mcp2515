@@ -2,7 +2,7 @@
 #include <iostream>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "mcp2515.h"
+#include "mcp2515.hpp"
 
 #define BITS_IN_BYTE (8)
 
@@ -15,10 +15,7 @@ const struct MCP2515::RXBn_REGS MCP2515::RXB[N_RXBUFFERS] = {
     {MCP_RXB0CTRL, MCP_RXB0SIDH, MCP_RXB0DATA, CANINTF_RX0IF},
     {MCP_RXB1CTRL, MCP_RXB1SIDH, MCP_RXB1DATA, CANINTF_RX1IF}};
 
-MCP2515::MCP2515(const spi_device_handle_t *spi)
-{
-    spi = spi;
-}
+MCP2515::MCP2515(const spi_device_handle_t *spi) : spi(spi) {}
 
 MCP2515::ERROR MCP2515::reset(void)
 {
@@ -104,7 +101,7 @@ uint8_t MCP2515::readRegister(const REGISTER reg)
     return transaction.rx_data[2];
 }
 
-void MCP2515::readRegisters(const REGISTER reg, uint8_t values[], const uint8_t n)
+void MCP2515::readRegisters(const REGISTER reg, uint8_t values[], const size_t n)
 {
     spi_transaction_t transaction = {};
     uint8_t *rx_data = new uint8_t[n + 2](0);
@@ -145,7 +142,7 @@ void MCP2515::setRegister(const REGISTER reg, const uint8_t value)
     }
 }
 
-void MCP2515::setRegisters(const REGISTER reg, const uint8_t values[], const uint8_t n)
+void MCP2515::setRegisters(const REGISTER reg, const uint8_t values[], const size_t n)
 {
     spi_transaction_t transaction = {};
     uint8_t *tx_data = new uint8_t[n + 2](0);
