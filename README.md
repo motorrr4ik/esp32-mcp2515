@@ -1,8 +1,7 @@
-Arduino MCP2515 CAN interface library
----------------------------------------------------------
-[![Build Status](https://travis-ci.org/autowp/arduino-mcp2515.svg?branch=master)](https://travis-ci.org/autowp/arduino-mcp2515)
+# ESP32 MCP2515 CAN interface library
 
-<br>
+This repository is fork of original Arduino MCP2515 library - <https://github.com/autowp/arduino-mcp2515>
+
 CAN-BUS is a common industrial bus because of its long travel distance, medium communication speed and high reliability. It is commonly found on modern machine tools and as an automotive diagnostic bus. This CAN-BUS Shield gives your Arduino/Seeeduino CAN-BUS capability. With an OBD-II converter cable added on and the OBD-II library imported, you are ready to build an onboard diagnostic device or data logger.
 
 - Implements CAN V2.0B at up to 1 Mb/s
@@ -11,58 +10,70 @@ CAN-BUS is a common industrial bus because of its long travel distance, medium c
 - Two receive buffers with prioritized message storage
 
 **Contents:**
-* [Hardware](#hardware)
-   * [CAN Shield](#can-shield)
-   * [Do It Yourself](#do-it-yourself)
-* [Software Usage](#software-usage)
-   * [Library Installation](#library-installation)
-   * [Initialization](#initialization)
-   * [Frame data format](#frame-data-format)
-   * [Send Data](#send-data)
-   * [Receive Data](#receive-data)
-   * [Set Receive Mask and Filter](#set-receive-mask-and-filter)
-   * [Examples](#examples)
 
-# Hardware:
+- [Hardware](#hardware)
+  - [CAN Shield](#can-shield)
+  - [Do It Yourself](#do-it-yourself)
+- [Software Usage](#software-usage)
+  - [Library Installation](#library-installation)
+  - [Initialization](#initialization)
+  - [Frame data format](#frame-data-format)
+  - [Send Data](#send-data)
+  - [Receive Data](#receive-data)
+  - [Set Receive Mask and Filter](#set-receive-mask-and-filter)
+  - [Examples](#examples)
 
-## CAN Shield
+## Hardware
+
+### CAN Shield
 
 The following code samples uses the CAN-BUS Shield, wired up as shown:
 
 ![MCP2515 CAN-Shield wiring](examples/wiring.png)
 
-## Do It Yourself
+### Do It Yourself
 
 If you want to make your own CAN board for under $10, you can achieve that with something like this:
 
 ![MCP2515 with MCP2551 wiring](examples/wiring-diy.png)
 
 Component References:
-* [MCP2515](https://www.microchip.com/wwwproducts/en/MCP2515) Stand-Alone CAN Controller with SPI Interface
-* [MCP2551](https://www.microchip.com/wwwproducts/en/MCP2551) High-speed CAN Transceiver - pictured above, however "not recommended for new designs"
-* [MCP2562](https://www.microchip.com/wwwproducts/en/MCP2562) High-speed CAN Transceiver with Standby Mode and VIO Pin - an updated tranceiver since the _MCP2551_ (requires different wiring, read datasheet for example, also [here](https://fragmuffin.github.io/howto-micropython/slides/index.html#/7/5))
-* [TJA1055](https://www.nxp.com/docs/en/data-sheet/TJA1055.pdf) Fault-tolerant low speed CAN Transceiver. Mostly used in vehicles.
 
+- [MCP2515](https://www.microchip.com/wwwproducts/en/MCP2515) Stand-Alone CAN Controller with SPI Interface
+- [MCP2551](https://www.microchip.com/wwwproducts/en/MCP2551) High-speed CAN Transceiver - pictured above, however "not recommended for new designs"
+- [MCP2562](https://www.microchip.com/wwwproducts/en/MCP2562) High-speed CAN Transceiver with Standby Mode and VIO Pin - an updated tranceiver since the _MCP2551_ (requires different wiring, read datasheet for example, also [here](https://fragmuffin.github.io/howto-micropython/slides/index.html#/7/5))
+- [TJA1055](https://www.nxp.com/docs/en/data-sheet/TJA1055.pdf) Fault-tolerant low speed CAN Transceiver. Mostly used in vehicles.
 
-# Software Usage:
+## Software Usage
 
-## Library Installation
+### Library Installation
 
-1. Download the ZIP file from https://github.com/autowp/arduino-mcp2515/archive/master.zip
-2. From the Arduino IDE: Sketch -> Include Library... -> Add .ZIP Library...
-3. Restart the Arduino IDE to see the new "mcp2515" library with examples
+1. Download the ZIP file from <https://github.com/motorrr4ik/esp32-mcp2515/archive/master.zip> or run `git clone https://github.com/motorrr4ik/esp32-mcp2515.git` at your ESP-IDF project directory
+2. Edit root `CMakeLists.txt` file accorfing to example:
 
-## Initialization
+    ```CMake
+    idf_component_register(SRCS "main.c"
+                        INCLUDE_DIRS "."
+                        REQUIRES esp32-mcp2515
+    )
+    ```
+
+3. Build a project
+
+### Initialization
 
 To create connection with MCP2515 provide pin number where SPI CS is connected (10 by default), baudrate and mode
 
 The available modes are listed as follows:
+
 ```C++
 mcp2515.setNormalMode();
 mcp2515.setLoopbackMode();
 mcp2515.setListenOnlyMode();
 ```
+
 The available baudrates are listed as follows:
+
 ```C++
 enum CAN_SPEED {
     CAN_5KBPS,
@@ -84,26 +95,34 @@ enum CAN_SPEED {
 };
 ```
 
-
 Example of initialization
 
 ```C++
-MCP2515 mcp2515(10);
+spi_device_interface_config_t devcfg = {
+    .clock_speed_hz = 10*1000*1000,           
+    .mode = 0,                                
+    .spics_io_num = PIN_NUM_CS,              
+    .queue_size = 3,                          
+    .flags = 0,
+    .pre_cb = NULL,
+    .post_cb = NULL,
+};
+
+spi_device_handle_t handle = NULL;
+ret = spi_bus_add_device(SPI2_HOST, &devcfg, &handle);
+
+MCP2515 mcp2515(&handle);
 mcp2515.reset();
 mcp2515.setBitrate(CAN_125KBPS);
 mcp2515.setLoopbackMode();
 ```
 
-<br>
-
-<br>
 You can also set oscillator frequency for module when setting bitrate:
 
 ```C++
 mcp2515.setBitrate(CAN_125KBPS, MCP_8MHZ);
 ```
 
-<br>
 The available clock speeds are listed as follows:
 
 ```C++
@@ -115,11 +134,10 @@ enum CAN_CLOCK {
 ```
 
 Default value is MCP_16MHZ
-<br>
 
 Note: To transfer data on high speed of CAN interface via UART dont forget to update UART baudrate as necessary.
 
-## Frame data format
+### Frame data format
 
 Library uses Linux-like structure to store can frames;
 
@@ -133,7 +151,7 @@ struct can_frame {
 
 For additional information see [SocketCAN](https://www.kernel.org/doc/Documentation/networking/can.txt)
 
-## Send Data
+### Send Data
 
 ```C++
 MCP2515::ERROR sendMessage(const MCP2515::TXBn txbn, const struct can_frame *frame);
@@ -170,9 +188,7 @@ tell other devices this is a extended frame from 0x12345678. */
 mcp2515.sendMessage(MCP2515::TXB1, &frame);
 ```
 
-
-
-## Receive Data
+### Receive Data
 
 The following function is used to receive data on the 'receive' node:
 
@@ -190,14 +206,19 @@ Example of poll read
 ```C++
 struct can_frame frame;
 
-void loop() {
-    if (mcp2515.readMessage(&frame) == MCP2515::ERROR_OK) {
+void app_main(void)
+{
+    while (1)
+    {
+        if (mcp2515.readMessage(&frame) == MCP2515::ERROR_OK) {
         // frame contains received message
+        }
     }
 }
+
 ```
 
-Example of interrupt based read
+<!-- Example of interrupt based read
 
 ```C++
 volatile bool interrupt = false;
@@ -231,10 +252,9 @@ void loop() {
         }
     }
 }
-```
+``` -->
 
-
-## Set Receive Mask and Filter
+### Set Receive Mask and Filter
 
 There are 2 receive mask registers and 5 filter registers on the controller chip that guarantee you get data from the target device. They are useful, especially in a large network consisting of numerous nodes.
 
@@ -253,27 +273,22 @@ MCP2515::ERROR setFilter(const RXF num, const bool ext, const uint32_t ulData)
 
 **ulData** represents the content of the mask of filter.
 
-
-## Examples
+### Examples
 
 Example implementation of CanHacker (lawicel) protocol based device: [https://github.com/autowp/can-usb](https://github.com/autowp/can-usb)
 
-
 For more information, please refer to [wiki page](http://www.seeedstudio.com/wiki/CAN-BUS_Shield) .
-
 
 ----
 
-This software is written by loovee ([luweicong@seeed.cc](luweicong@seeed.cc "luweicong@seeed.cc")) for seeed studio,<br>
-Updated by Dmitry ([https://github.com/autowp](https://github.com/autowp "https://github.com/autowp"))<br>
-and is licensed under [The MIT License](http://opensource.org/licenses/mit-license.php). Check [LICENSE.md](LICENSE.md) for more information.<br>
+This software is written by loovee ([luweicong@seeed.cc](luweicong@seeed.cc "luweicong@seeed.cc")) for seeed studio, Updated by Dmitry ([https://github.com/autowp](https://github.com/autowp "https://github.com/autowp")) and is licensed under [The MIT License](http://opensource.org/licenses/mit-license.php). Check [LICENSE.md](LICENSE.md) for more information.
 
-Contributing to this software is warmly welcomed. You can do this basically by<br>
-[forking](https://help.github.com/articles/fork-a-repo), committing modifications and then [pulling requests](https://help.github.com/articles/using-pull-requests) (follow the links above<br>
-for operating guide). Adding change log and your contact into file header is encouraged.<br>
+Contributing to this software is warmly welcomed. You can do this basically by
+[forking](https://help.github.com/articles/fork-a-repo), committing modifications and then [pulling requests](https://help.github.com/articles/using-pull-requests) (follow the links above
+for operating guide). Adding change log and your contact into file header is encouraged.
 Thanks for your contribution.
 
-Seeed Studio is an open hardware facilitation company based in Shenzhen, China. <br>
-Benefiting from local manufacture power and convenient global logistic system, <br>
-we integrate resources to serve new era of innovation. Seeed also works with <br>
-global distributors and partners to push open hardware movement.<br>
+Seeed Studio is an open hardware facilitation company based in Shenzhen, China.
+Benefiting from local manufacture power and convenient global logistic system,
+we integrate resources to serve new era of innovation. Seeed also works with
+global distributors and partners to push open hardware movement.
