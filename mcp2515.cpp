@@ -101,7 +101,7 @@ uint8_t MCP2515::readRegister(const REGISTER reg)
     return transaction.rx_data[2];
 }
 
-void MCP2515::readRegisters(const REGISTER reg, uint8_t values[], const size_t n)
+void MCP2515::readRegisters(const REGISTER reg, uint8_t *values, const size_t n)
 {
     spi_transaction_t transaction = {};
     uint8_t *rx_data = new uint8_t[n + 2](0);
@@ -110,7 +110,7 @@ void MCP2515::readRegisters(const REGISTER reg, uint8_t values[], const size_t n
     tx_data[0] = INSTRUCTION_READ;
     tx_data[1] = reg;
 
-    transaction.length = ((2 + ((size_t)n)) * 8);
+    transaction.length = ((2 + n) * 8);
     transaction.rx_buffer = rx_data;
     transaction.tx_buffer = tx_data;
 
@@ -120,7 +120,7 @@ void MCP2515::readRegisters(const REGISTER reg, uint8_t values[], const size_t n
         std::cout << "Transmission failed!" << std::endl;
     }
 
-    memcpy(values, (transaction.rx_buffer + 2), (size_t)n);
+    memcpy(values, (transaction.rx_buffer + 2), n);
     delete[] rx_data;
     delete[] tx_data;
 }
@@ -150,10 +150,10 @@ void MCP2515::setRegisters(const REGISTER reg, const uint8_t values[], const siz
     tx_data[0] = INSTRUCTION_WRITE;
     tx_data[1] = reg;
 
-    memcpy((tx_data + 2), values, (size_t)n);
+    memcpy((tx_data + 2), values, n);
 
-    transaction.length = ((2 + ((size_t)n)) * 8);
-    transaction.flags = SPI_TRANS_USE_TXDATA;
+    transaction.length = ((2 + n) * 8);
+    transaction.flags = 0;
     transaction.tx_buffer = tx_data;
 
     esp_err_t ret = spi_device_transmit(*spi, &transaction);
@@ -166,12 +166,6 @@ void MCP2515::setRegisters(const REGISTER reg, const uint8_t values[], const siz
 
 void MCP2515::modifyRegister(const REGISTER reg, const uint8_t mask, const uint8_t data)
 {
-    // startSPI();
-    // SPIn->transfer(INSTRUCTION_BITMOD);
-    // SPIn->transfer(reg);
-    // SPIn->transfer(mask);
-    // SPIn->transfer(data);
-    // endSPI();
 
     spi_transaction_t transaction = {};
 
@@ -682,7 +676,7 @@ MCP2515::ERROR MCP2515::sendMessage(const TXBn txbn, const struct can_frame *fra
 
     const struct TXBn_REGS *txbuf = &TXB[txbn];
 
-    uint8_t data[13];
+    uint8_t data[13] = {0};
 
     bool ext = (frame->can_id & CAN_EFF_FLAG);
     bool rtr = (frame->can_id & CAN_RTR_FLAG);

@@ -2,7 +2,17 @@
 #define _MCP2515_H_
 
 #include "driver/spi_master.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
 #include "can.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 /*
  *  Speed 8M
