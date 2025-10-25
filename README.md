@@ -98,23 +98,78 @@ enum CAN_SPEED {
 Example of initialization
 
 ```C++
-spi_device_interface_config_t devcfg = {
-    .clock_speed_hz = 10*1000*1000,           
-    .mode = 0,                                
-    .spics_io_num = PIN_NUM_CS,              
-    .queue_size = 3,                          
-    .flags = 0,
-    .pre_cb = NULL,
-    .post_cb = NULL,
-};
+        esp_err_t ret;
 
-spi_device_handle_t handle = NULL;
-ret = spi_bus_add_device(SPI2_HOST, &devcfg, &handle);
+        spi_bus_config_t buscfg = {
+            .mosi_io_num = PIN_NUM_MOSI,
+            .miso_io_num = PIN_NUM_MISO,
+            .sclk_io_num = PIN_NUM_CLK,
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
+            .max_transfer_sz = 4096, 
+            .flags = 0,
+            .isr_cpu_id = ESP_INTR_CPU_AFFINITY_AUTO,
+        };
 
-MCP2515 mcp2515(&handle);
-mcp2515.reset();
-mcp2515.setBitrate(CAN_125KBPS);
-mcp2515.setLoopbackMode();
+        
+        ret = spi_bus_initialize(SPI2_HOST, &buscfg, SPI_DMA_CH_AUTO);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "spi_bus_initialize failed: %s", esp_err_to_name(ret));
+            return;
+        }
+
+        
+        spi_device_interface_config_t devcfg = {0};
+
+        devcfg.command_bits = 0;
+        devcfg.address_bits = 0;
+        devcfg.dummy_bits = 0;
+        devcfg.mode = 0;
+        devcfg.clock_speed_hz = 10 * 1000 * 1000; 
+        devcfg.spics_io_num = PIN_NUM_CS;
+        devcfg.queue_size = 3;
+        devcfg.cs_ena_pretrans = 0;
+        devcfg.cs_ena_posttrans = 0;
+        devcfg.flags = 0;
+        devcfg.pre_cb = NULL;
+        devcfg.post_cb = NULL;
+
+        spi_device_handle_t handle = NULL;
+        ret = spi_bus_add_device(SPI2_HOST, &devcfg, &handle);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "spi_bus_add_device failed: %s", esp_err_to_name(ret));
+            spi_bus_free(SPI2_HOST);
+            return;
+        }
+
+        MCP2515 dev(&handle);
+        if (dev.reset() != MCP2515::ERROR_OK)
+        {
+            std::cout << "MCP2515 reset failed!" << std::endl;
+            while (1)
+                ; // Halt if initialization fails
+        }
+        else
+        {
+            std::cout << "MCP2515 reset successfully!" << std::endl;
+        }
+
+        // Set CAN bitrate to 500 kbps with 8 MHz oscillator
+        if (dev.setBitrate(CAN_500KBPS, MCP_8MHZ) == MCP2515::ERROR_OK)
+        {
+            std::cout << "MCP2515 Initialized successfully!" << std::endl;
+        }
+        else
+        {
+            std::cout << "MCP2515 Initialization failed!" << std::endl;
+
+            while (1)
+                ; // Halt if initialization fails
+        }
+
+        dev.setNormalMode();
 ```
 
 You can also set oscillator frequency for module when setting bitrate:
