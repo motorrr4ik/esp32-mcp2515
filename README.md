@@ -10,10 +10,6 @@ CAN-BUS is a common industrial bus because of its long travel distance, medium c
 - Two receive buffers with prioritized message storage
 
 **Contents:**
-
-- [Hardware](#hardware)
-  - [CAN Shield](#can-shield)
-  - [Do It Yourself](#do-it-yourself)
 - [Software Usage](#software-usage)
   - [Library Installation](#library-installation)
   - [Initialization](#initialization)
