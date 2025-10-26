@@ -110,7 +110,7 @@ void MCP2515::readRegisters(const REGISTER reg, uint8_t *values, const size_t n)
     tx_data[0] = INSTRUCTION_READ;
     tx_data[1] = reg;
 
-    transaction.length = ((2 + n) * 8);
+    transaction.length = ((2 + n) * BITS_IN_BYTE);
     transaction.rx_buffer = rx_data;
     transaction.tx_buffer = tx_data;
 
@@ -152,7 +152,7 @@ void MCP2515::setRegisters(const REGISTER reg, const uint8_t values[], const siz
 
     memcpy((tx_data + 2), values, n);
 
-    transaction.length = ((2 + n) * 8);
+    transaction.length = ((2 + n) * BITS_IN_BYTE);
     transaction.flags = 0;
     transaction.tx_buffer = tx_data;
 
